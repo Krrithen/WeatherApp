@@ -54,11 +54,11 @@ export default {
     },
     width: {
       type: Number,
-      default: 200,
+      default: 600,
     },
     height: {
       type: Number,
-      default: 140,
+      default: 400,
     },
     cssClasses: {
       default: "",
@@ -76,6 +76,10 @@ export default {
       type: Object,
       default: () => {},
     },
+    temperatureUnit: {
+      type: String,
+      default: "fahrenheit",
+    },
   },
   data() {
     return {
@@ -83,23 +87,18 @@ export default {
       loaded: false,
       componentKey: 0,
       chartData: {
-        labels: [
-          "2023-02-15",
-          "2023-02-16",
-          "2023-02-17",
-          "2023-02-18",
-          "2023-02-19",
-          "2023-02-20",
-          "2023-02-21",
-        ],
+        labels: [],
         datasets: [
           {
             fill: true,
-            label: "Temperature",
-            borderColor: "red",
-            backgroundColor: "red",
+            label: "Average Temperature",
+            borderColor: "#ff6b6b",
+            backgroundColor: "rgba(255, 107, 107, 0.2)",
             data: null,
-            borderWidth: 2,
+            borderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            tension: 0.4,
           },
         ],
       },
@@ -107,9 +106,38 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          title: {
+            display: true,
+            text: "3-Day Temperature Forecast",
+            color: "white",
+            font: {
+              size: 18,
+              weight: "bold",
+            },
+          },
           legend: {
             labels: {
               color: "white",
+              font: {
+                size: 14,
+              },
+            },
+          },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            titleColor: "white",
+            bodyColor: "white",
+            borderColor: "rgba(255, 255, 255, 0.2)",
+            borderWidth: 1,
+            cornerRadius: 8,
+            displayColors: true,
+            callbacks: {
+              label: function (context) {
+                const unit = context.dataset.label.includes("Celsius")
+                  ? "°C"
+                  : "°F";
+                return `${context.dataset.label}: ${context.parsed.y}${unit}`;
+              },
             },
           },
         },
@@ -117,50 +145,92 @@ export default {
           x: {
             ticks: {
               color: "white",
+              font: {
+                size: 12,
+              },
+            },
+            grid: {
+              color: "rgba(255, 255, 255, 0.1)",
+            },
+            title: {
+              display: true,
+              text: "Days",
+              color: "white",
+              font: {
+                size: 14,
+                weight: "bold",
+              },
             },
           },
           y: {
             ticks: {
               color: "white",
+              font: {
+                size: 12,
+              },
+              callback: function (value) {
+                const unit = this.temperatureUnit === "celsius" ? "°C" : "°F";
+                return value + unit;
+              },
+            },
+            grid: {
+              color: "rgba(255, 255, 255, 0.1)",
+            },
+            title: {
+              display: true,
+              text: "Temperature",
+              color: "white",
+              font: {
+                size: 14,
+                weight: "bold",
+              },
             },
           },
         },
       },
     };
   },
-  mounted: function () {
-    this.loaded = false;
-    try {
-      for (let weekDay in this.CurrentData.forecast.forecastday) {
-        this.graphData.push(
-          this.CurrentData.forecast.forecastday[weekDay].day.avgtemp_c
-        );
-      }
-      this.chartData.datasets[0].data = this.graphData;
-      // console.log(this.chartData.datasets[0].data);
-      this.loaded = true;
-    } catch (e) {
-      console.error(e);
-    }
+  mounted() {
+    this.updateChartData();
   },
   watch: {
-    CurrentData(newData, oldData) {
-      console.log(newData);
-      console.log(oldData);
+    CurrentData: {
+      handler() {
+        this.updateChartData();
+      },
+      deep: true,
+    },
+  },
+  methods: {
+    updateChartData() {
+      if (!this.CurrentData?.forecast?.forecastday) return;
+
       this.loaded = false;
       this.graphData = [];
+
       try {
-        for (let weekDay in newData.forecast.forecastday) {
-          this.graphData.push(
-            newData.forecast.forecastday[weekDay].day.avgtemp_c
-          );
-        }
+        const forecastDays = this.CurrentData.forecast.forecastday;
+        const labels = [];
+
+        forecastDays.forEach((day) => {
+          const date = new Date(day.date);
+          const dayName = date.toLocaleDateString("en-US", {
+            weekday: "short",
+          });
+          labels.push(dayName);
+          const temp =
+            this.temperatureUnit === "celsius"
+              ? day.day.avgtemp_c
+              : day.day.avgtemp_f;
+          this.graphData.push(temp);
+        });
+
+        this.chartData.labels = labels;
         this.chartData.datasets[0].data = this.graphData;
-        // console.log("chart", this.chartData.datasets[0].data);
         this.componentKey += 1;
         this.loaded = true;
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error("Error updating chart data:", error);
       }
     },
   },

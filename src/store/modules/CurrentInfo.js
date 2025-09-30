@@ -1,42 +1,49 @@
+import weatherApi from "@/services/weatherApi";
+
 export default {
   state: {
-    current: [],
-    location: "Bangalore",
+    current: null,
+    defaultLocation: "Chicago",
+    loading: false,
+    error: null,
   },
   getters: {
     getCurrentInfo: (state) => state.current,
-    getLocationInfo: (state) => state.location,
+    getDefaultLocation: (state) => state.defaultLocation,
+    isLoading: (state) => state.loading,
+    getError: (state) => state.error,
+    hasWeatherData: (state) => state.current !== null,
   },
   mutations: {
-    setCurrentInfo: (state, value) => (state.current = value),
-    setLocationInfo: (state, value) => (state.location = value),
+    setCurrentInfo: (state, value) => {
+      state.current = value;
+      state.error = null;
+    },
+    setDefaultLocation: (state, value) => (state.defaultLocation = value),
+    setLoading: (state, value) => (state.loading = value),
+    setError: (state, value) => (state.error = value),
   },
   actions: {
-    getCurrentInfoApi: ({ commit }, { success, location }) => {
-      // console.log(location);
-      fetch(
-        "http://api.weatherapi.com/v1/forecast.json?key=7a635d10a9b045d7a7c54416230902&q=" +
-          location +
-          "&days=7&aqi=no&alerts=no"
-      )
-        // fetch(`http://localhost:8090/location/getLocation/${location}`)
-        .then((res) => res.json())
-        .then((res) => {
-          console.log("From Store", res);
-          commit("setCurrentInfo", res);
-          success && success(res);
-        })
-        .catch((errors) => {
-          // alert("Entered location could not be found!");
-          console.log("ERRORS: ", errors.code);
-          // fetch(
-          //   "http://api.weatherapi.com/v1/forecast.json?key=7a635d10a9b045d7a7c54416230902&q=Bangalore&days=7&aqi=no&alerts=no"
-          // )
-          //   .then((res) => res.json())
-          //   .then((res) => {
-          //     commit("setCurrentInfo", res);
-          //   });
-        });
+    async getCurrentInfoApi({ commit }, location) {
+      commit("setLoading", true);
+      commit("setError", null);
+
+      try {
+        const data = await weatherApi.fetchWeatherData(location);
+        commit("setCurrentInfo", data);
+        return data;
+      } catch (error) {
+        commit("setError", error.message);
+        throw error;
+      } finally {
+        commit("setLoading", false);
+      }
+    },
+    clearError({ commit }) {
+      commit("setError", null);
+    },
+    setDefaultLocation({ commit }, location) {
+      commit("setDefaultLocation", location);
     },
   },
 };

@@ -54,11 +54,11 @@ export default {
     },
     width: {
       type: Number,
-      default: 200,
+      default: 600,
     },
     height: {
       type: Number,
-      default: 140,
+      default: 400,
     },
     cssClasses: {
       default: "",
@@ -83,23 +83,18 @@ export default {
       loaded: false,
       componentKey: 0,
       chartData: {
-        labels: [
-          "2023-02-15",
-          "2023-02-16",
-          "2023-02-17",
-          "2023-02-18",
-          "2023-02-19",
-          "2023-02-20",
-          "2023-02-21",
-        ],
+        labels: [],
         datasets: [
           {
             fill: true,
-            label: "Wind Speed in kmph",
-            borderColor: "orange",
-            backgroundColor: "orange",
+            label: "Maximum Wind Speed",
+            borderColor: "#4ecdc4",
+            backgroundColor: "rgba(78, 205, 196, 0.2)",
             data: null,
-            borderWidth: 2,
+            borderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            tension: 0.4,
           },
         ],
       },
@@ -107,9 +102,35 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          title: {
+            display: true,
+            text: "3-Day Wind Speed Forecast",
+            color: "white",
+            font: {
+              size: 18,
+              weight: "bold",
+            },
+          },
           legend: {
             labels: {
               color: "white",
+              font: {
+                size: 14,
+              },
+            },
+          },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            titleColor: "white",
+            bodyColor: "white",
+            borderColor: "rgba(255, 255, 255, 0.2)",
+            borderWidth: 1,
+            cornerRadius: 8,
+            displayColors: true,
+            callbacks: {
+              label: function (context) {
+                return `${context.dataset.label}: ${context.parsed.y} km/h`;
+              },
             },
           },
         },
@@ -117,50 +138,87 @@ export default {
           x: {
             ticks: {
               color: "white",
+              font: {
+                size: 12,
+              },
+            },
+            grid: {
+              color: "rgba(255, 255, 255, 0.1)",
+            },
+            title: {
+              display: true,
+              text: "Days",
+              color: "white",
+              font: {
+                size: 14,
+                weight: "bold",
+              },
             },
           },
           y: {
             ticks: {
               color: "white",
+              font: {
+                size: 12,
+              },
+              callback: function (value) {
+                return value + " km/h";
+              },
+            },
+            grid: {
+              color: "rgba(255, 255, 255, 0.1)",
+            },
+            title: {
+              display: true,
+              text: "Wind Speed (km/h)",
+              color: "white",
+              font: {
+                size: 14,
+                weight: "bold",
+              },
             },
           },
         },
       },
     };
   },
-  mounted: function () {
-    this.loaded = false;
-    try {
-      for (let weekDay in this.CurrentData.forecast.forecastday) {
-        this.graphData.push(
-          this.CurrentData.forecast.forecastday[weekDay].day.maxwind_kph
-        );
-      }
-      this.chartData.datasets[0].data = this.graphData;
-      // console.log(this.chartData.datasets[0].data);
-      this.loaded = true;
-    } catch (e) {
-      console.error(e);
-    }
+  mounted() {
+    this.updateChartData();
   },
   watch: {
-    CurrentData(newData, oldData) {
-      console.log(newData);
-      console.log(oldData);
+    CurrentData: {
+      handler() {
+        this.updateChartData();
+      },
+      deep: true,
+    },
+  },
+  methods: {
+    updateChartData() {
+      if (!this.CurrentData?.forecast?.forecastday) return;
+
       this.loaded = false;
       this.graphData = [];
+
       try {
-        for (let weekDay in newData.forecast.forecastday) {
-          this.graphData.push(
-            newData.forecast.forecastday[weekDay].day.maxwind_kph
-          );
-        }
+        const forecastDays = this.CurrentData.forecast.forecastday;
+        const labels = [];
+
+        forecastDays.forEach((day) => {
+          const date = new Date(day.date);
+          const dayName = date.toLocaleDateString("en-US", {
+            weekday: "short",
+          });
+          labels.push(dayName);
+          this.graphData.push(day.day.maxwind_kph);
+        });
+
+        this.chartData.labels = labels;
         this.chartData.datasets[0].data = this.graphData;
-        // console.log("chart", this.chartData.datasets[0].data);
         this.componentKey += 1;
         this.loaded = true;
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error("Error updating wind chart data:", error);
       }
     },
   },

@@ -76,6 +76,8 @@ export default {
 .dateDiv h2 {
   color: whitesmoke;
   padding-left: 4vw;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
 }
 .dateDiv h1 {
   height: 12vh;
@@ -84,6 +86,8 @@ export default {
   padding-top: 2vh;
   font-size: 10vh;
   color: whitesmoke;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: 700;
 }
 
 @media (max-width: 480px) {

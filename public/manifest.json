@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "ChromeDash - New Tab",
+  "version": "1.0.0",
+  "description": "ChromeDash - A beautiful new tab dashboard with weather, daily quotes, and dynamic backgrounds",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://api.quotable.io/*",
+    "https://api.unsplash.com/*",
+    "https://api.weatherapi.com/*"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.quotable.io https://api.unsplash.com https://api.weatherapi.com;"
+  },
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  }
+}
